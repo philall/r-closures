@@ -2,24 +2,28 @@ use std::thread;
 use std::time::Duration;
 use std::collections::HashMap;
 
-struct Cacher<T> 
-    where T: Fn(u32) -> u32 
+struct Cacher<T, U, R> 
+    where T: Fn(U) -> R,
+        U: std::cmp::Eq + std::hash::Hash + Copy, 
+        R: Copy
 {
     calculation: T,
-    value: HashMap<u32, u32>,
+    value: HashMap<U, R>,
 }
 
-impl<T> Cacher<T> 
-    where T: Fn(u32) -> u32 
+impl<T, U ,R> Cacher<T, U, R> 
+    where T: Fn(U) -> R, 
+        U: std::cmp::Eq + std::hash::Hash + Copy, 
+        R: Copy
 {
-    fn new(calculation: T) -> Cacher<T> {
+    fn new(calculation: T) -> Cacher<T, U, R> {
         Cacher {
             calculation,
             value: HashMap::new(),
         }
     }
 
-    fn value(&mut self, arg: u32) -> u32 {
+    fn value(&mut self, arg: U) -> R {
         match self.value.get(&arg) {
             Some(x) => {
                 *x
@@ -81,4 +85,12 @@ fn call_with_different_values() {
     assert_eq!(v1, 1);
     assert_eq!(v2, 2);
     assert_eq!(v1, 1);
+}
+
+#[test]
+fn call_with_different_type() {
+    let mut str_c = Cacher::new(|a| a);
+
+    let v1 = str_c.value("hello");
+    assert_eq!(v1, "hello");
 }
